@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  negotiations Negotiation[]
+}
+
+model Negotiation {
+  id              String   @id @default(cuid())
+  name            String
+  buyerId         String
+  buyerName       String?
+  companyName     String?  // TPL, TCL, etc.
+  uniqueLink      String   @unique
+  currency        String   @default("USD")
+  status          NegotiationStatus @default(ACTIVE)
+  concludedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  buyer           User         @relation(fields: [buyerId], references: [id])
+  messages        Message[]
+  terms           NegotiationTerm[]
+  items           Item[]
+  suppliers       Supplier[]
+  
+  @@map("negotiations")
+}
+
+model Message {
+  id            String      @id @default(cuid())
+  content       String
+  role          MessageRole
+  negotiationId String
+  timestamp     DateTime    @default(now())
+  
+  negotiation   Negotiation @relation(fields: [negotiationId], references: [id])
+  
+  @@map("messages")
+}
+
+model NegotiationTerm {
+  id            String      @id @default(cuid())
+  negotiationId String
+  itemId        String?     // Optional: link to specific item
+  termType      TermType
+  targetValue   String
+  quotedValue   String?
+  currentValue  String?
+  agreedValue   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  negotiation   Negotiation @relation(fields: [negotiationId], references: [id])
+  item          Item?       @relation(fields: [itemId], references: [id])
+  
+  @@map("negotiation_terms")
+}
+
+model Item {
+  id            String      @id @default(cuid())
+  negotiationId String
+  supplierId    String?
+  name          String
+  description   String?
+  quantity      String?
+  unit          String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  negotiation   Negotiation @relation(fields: [negotiationId], references: [id])
+  supplier      Supplier?   @relation(fields: [supplierId], references: [id])
+  terms         NegotiationTerm[]
+  
+  @@map("items")
+}
+
+model Supplier {
+  id                  String   @id @default(cuid())
+  negotiationId       String
+  name                String
+  email               String?
+  representative      String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  negotiation         Negotiation @relation(fields: [negotiationId], references: [id])
+  items               Item[]
+  
+  @@map("suppliers")
+}
+
+enum NegotiationStatus {
+  ACTIVE
+  CONCLUDED
+}
+
+enum MessageRole {
+  BUYER
+  SUPPLIER
+  AI_BOT
+  SYSTEM
+}
+
+enum TermType {
+  PRICE
+  QUOTED_PRICE
+  PAYMENT_TERMS
+  FREIGHT
+  DELIVERY_SCHEDULE
+  WARRANTY
+  LD_CLAUSE
+}
+
+enum Currency {
+  INR
+  USD
+  EUR
+  GBP
+}
