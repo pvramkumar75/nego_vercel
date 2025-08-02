@@ -5,7 +5,7 @@ import { Server } from 'socket.io';
 import next from 'next';
 
 const dev = process.env.NODE_ENV !== 'production';
-const currentPort = 3000;
+const port = Number(process.env.PORT) || 3000; // Use Render's PORT or default to 3000 locally
 const hostname = '0.0.0.0';
 
 // Custom server with Socket.IO integration
@@ -15,7 +15,6 @@ async function createCustomServer() {
     const nextApp = next({ 
       dev,
       dir: process.cwd(),
-      // In production, use the current directory where .next is located
       conf: dev ? undefined : { distDir: './.next' }
     });
 
@@ -43,9 +42,9 @@ async function createCustomServer() {
     setupSocket(io);
 
     // Start the server
-    server.listen(currentPort, hostname, () => {
-      console.log(`> Ready on http://${hostname}:${currentPort}`);
-      console.log(`> Socket.IO server running at ws://${hostname}:${currentPort}/api/socketio`);
+    server.listen(port, hostname, () => {
+      console.log(`> Ready on http://${hostname}:${port}`);
+      console.log(`> Socket.IO server running at ws://${hostname}:${port}/api/socketio`);
     });
 
   } catch (err) {
